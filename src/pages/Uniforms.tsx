@@ -2,56 +2,56 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Shirt, AlertCircle, X, Eye, Plus, Upload } from 'lucide-react';
 
-interface Uniform {
+interface Uniforme {
   id: string;
-  type: string;
-  size: string;
-  status: 'available' | 'assigned' | 'maintenance';
-  number: number;
-  athlete?: string;
-  condition: string;
+  tipo: string;
+  tamanho: string;
+  situacao: 'disponivel' | 'atribuido' | 'manutencao';
+  numero: number;
+  atleta?: string;
+  condicao: string;
 }
 
-interface UniformModel {
-  type: string;
+interface ModeloUniforme {
+  tipo: string;
   image: string;
 }
 
-interface UniformStats {
+interface UniformeStats {
   total: number;
-  available: number;
-  assigned: number;
-  maintenance: number;
+  disponiveis: number;
+  atribuidos: number;
+  manutencao: number;
 }
 
-const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
-const CONDITIONS = ['Novo', 'Bom', 'Regular', 'Ruim'];
+const TAMANHOS = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
+const CONDICOES = ['Novo', 'Bom', 'Regular', 'Ruim'];
 
 const UniformCard = ({ 
-  type, 
+  tipo, 
   stats, 
   image, 
-  uniforms,
+  uniformes,
   onViewDetails,
   onAddUniform 
 }: { 
-  type: string; 
-  stats: UniformStats; 
+  tipo: string; 
+  stats: UniformeStats; 
   image: string;
-  uniforms: Uniform[];
-  onViewDetails: (type: string, uniforms: Uniform[]) => void;
-  onAddUniform: (type: string) => void;
+  uniformes: Uniforme[];
+  onViewDetails: (tipo: string, uniformes: Uniforme[]) => void;
+  onAddUniform: (tipo: string) => void;
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="relative h-48">
         <img 
           src={image} 
-          alt={`Uniforme ${type}`} 
+          alt={`Uniforme ${tipo}`} 
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <h3 className="text-xl font-semibold text-white">Uniforme {type}</h3>
+          <h3 className="text-xl font-semibold text-white">Uniforme {tipo}</h3>
         </div>
       </div>
       
@@ -63,30 +63,30 @@ const UniformCard = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Disponíveis:</span>
-            <span className="font-semibold text-green-600">{stats.available}</span>
+            <span className="font-semibold text-green-600">{stats.disponiveis}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Em Uso:</span>
-            <span className="font-semibold text-blue-600">{stats.assigned}</span>
+            <span className="font-semibold text-blue-600">{stats.atribuidos}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Manutenção:</span>
-            <span className="font-semibold text-yellow-600">{stats.maintenance}</span>
+            <span className="font-semibold text-yellow-600">{stats.manutencao}</span>
           </div>
         </div>
 
-        {stats.maintenance > 0 && (
+        {stats.manutencao > 0 && (
           <div className="mt-4 p-3 bg-yellow-50 rounded-md flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-500" />
             <span className="text-sm text-yellow-700">
-              {stats.maintenance} uniforme(s) em manutenção
+              {stats.manutencao} uniforme(s) em manutenção
             </span>
           </div>
         )}
 
         <div className="mt-4 space-y-2">
           <button
-            onClick={() => onViewDetails(type, uniforms)}
+            onClick={() => onViewDetails(tipo, uniformes)}
             className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
             <Eye size={20} />
@@ -94,7 +94,7 @@ const UniformCard = ({
           </button>
           
           <button
-            onClick={() => onAddUniform(type)}
+            onClick={() => onAddUniform(tipo)}
             className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
           >
             <Plus size={20} />
@@ -107,19 +107,19 @@ const UniformCard = ({
 };
 
 const UniformDetails = ({
-  type,
-  uniforms,
+  tipo,
+  uniformes,
   onClose,
 }: {
-  type: string;
-  uniforms: Uniform[];
+  tipo: string;
+  uniformes: Uniforme[];
   onClose: () => void;
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="p-6 border-b flex justify-between items-center">
-          <h2 className="text-2xl font-semibold">Detalhes do Uniforme {type}</h2>
+          <h2 className="text-2xl font-semibold">Detalhes do Uniforme {tipo}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -150,23 +150,23 @@ const UniformDetails = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {uniforms.map((uniform) => (
-                <tr key={uniform.id}>
+              {uniformes.map((uniforme) => (
+                <tr key={uniforme.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {uniform.number}
+                    {uniforme.numero}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {uniform.status === 'available' ? 'Disponível' : 
-                     uniform.status === 'assigned' ? 'Em Uso' : 'Manutenção'}
+                    {uniforme.situacao === 'disponivel' ? 'Disponível' : 
+                     uniforme.situacao === 'atribuido' ? 'Em Uso' : 'Manutenção'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {uniform.size}
+                    {uniforme.tamanho}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {uniform.athlete || '-'}
+                    {uniforme.atleta || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {uniform.condition}
+                    {uniforme.condicao}
                   </td>
                 </tr>
               ))}
@@ -183,19 +183,19 @@ const NewUniformModel = ({
   onSave,
 }: {
   onClose: () => void;
-  onSave: (model: UniformModel) => void;
+  onSave: (model: ModeloUniforme) => void;
 }) => {
-  const [type, setType] = useState('');
+  const [tipo, setTipo] = useState('');
   const [image, setImage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!type || !image) return;
+    if (!tipo || !image) return;
 
     setLoading(true);
     try {
-      await onSave({ type, image });
+      await onSave({ tipo, image });
       onClose();
     } catch (error) {
       console.error('Erro ao salvar modelo:', error);
@@ -220,8 +220,8 @@ const NewUniformModel = ({
             <label className="block text-sm font-medium text-gray-700">Nome do Modelo</label>
             <input
               type="text"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
               required
             />
@@ -255,32 +255,32 @@ const NewUniformModel = ({
 };
 
 const NewUniform = ({
-  type,
+  tipo,
   onClose,
   onSave,
 }: {
-  type: string;
+  tipo: string;
   onClose: () => void;
-  onSave: (uniform: Partial<Uniform>) => void;
+  onSave: (uniforme: Partial<Uniforme>) => void;
 }) => {
   const [formData, setFormData] = useState({
-    number: '',
-    size: '',
-    condition: 'Novo',
+    numero: '',
+    tamanho: '',
+    condicao: 'Novo',
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.size || !formData.number) return;
+    if (!formData.tamanho || !formData.numero) return;
 
     setLoading(true);
     try {
       await onSave({
         ...formData,
-        type,
-        status: 'available', // Status inicial sempre como disponível
-        number: parseInt(formData.number),
+        tipo,
+        situacao: 'disponivel',
+        numero: parseInt(formData.numero),
       });
       onClose();
     } catch (error) {
@@ -295,7 +295,7 @@ const NewUniform = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
         <div className="p-6 border-b flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Novo Uniforme - {type}</h2>
+          <h2 className="text-xl font-semibold">Novo Uniforme - {tipo}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X size={20} />
           </button>
@@ -306,8 +306,8 @@ const NewUniform = ({
             <label className="block text-sm font-medium text-gray-700">Número</label>
             <input
               type="number"
-              value={formData.number}
-              onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+              value={formData.numero}
+              onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
               required
               min="1"
@@ -318,14 +318,14 @@ const NewUniform = ({
           <div>
             <label className="block text-sm font-medium text-gray-700">Tamanho</label>
             <select
-              value={formData.size}
-              onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+              value={formData.tamanho}
+              onChange={(e) => setFormData({ ...formData, tamanho: e.target.value })}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
               required
             >
               <option value="">Selecione um tamanho</option>
-              {SIZES.map(size => (
-                <option key={size} value={size}>{size}</option>
+              {TAMANHOS.map(tamanho => (
+                <option key={tamanho} value={tamanho}>{tamanho}</option>
               ))}
             </select>
           </div>
@@ -333,13 +333,13 @@ const NewUniform = ({
           <div>
             <label className="block text-sm font-medium text-gray-700">Condição</label>
             <select
-              value={formData.condition}
-              onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+              value={formData.condicao}
+              onChange={(e) => setFormData({ ...formData, condicao: e.target.value })}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
               required
             >
-              {CONDITIONS.map(condition => (
-                <option key={condition} value={condition}>{condition}</option>
+              {CONDICOES.map(condicao => (
+                <option key={condicao} value={condicao}>{condicao}</option>
               ))}
             </select>
           </div>
@@ -360,22 +360,22 @@ const NewUniform = ({
 };
 
 const Uniforms = () => {
-  const [uniforms, setUniforms] = useState<Uniform[]>([]);
+  const [uniformes, setUniformes] = useState<Uniforme[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showNewModel, setShowNewModel] = useState(false);
   const [showNewUniform, setShowNewUniform] = useState<string | null>(null);
-  const [uniformModels, setUniformModels] = useState<UniformModel[]>([
+  const [uniformModels, setUniformModels] = useState<ModeloUniforme[]>([
     {
-      type: 'PRETA 2023',
+      tipo: 'PRETA 2023',
       image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=300&h=300',
     },
     {
-      type: 'BRANCA 2023',
+      tipo: 'BRANCA 2023',
       image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&q=80&w=300&h=300',
     },
     {
-      type: 'TREINO',
+      tipo: 'TREINO',
       image: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&q=80&w=300&h=300',
     },
   ]);
@@ -387,11 +387,11 @@ const Uniforms = () => {
   const fetchUniforms = async () => {
     try {
       const { data, error } = await supabase
-        .from('uniforms')
+        .from('uniformes')
         .select('*');
 
       if (error) throw error;
-      setUniforms(data || []);
+      setUniformes(data || []);
     } catch (error) {
       console.error('Erro ao buscar uniformes:', error);
     } finally {
@@ -399,20 +399,20 @@ const Uniforms = () => {
     }
   };
 
-  const handleSaveModel = async (model: UniformModel) => {
+  const handleSaveModel = async (model: ModeloUniforme) => {
     setUniformModels([...uniformModels, model]);
   };
 
-  const handleSaveUniform = async (uniform: Partial<Uniform>) => {
+  const handleSaveUniform = async (uniforme: Partial<Uniforme>) => {
     try {
       const { data, error } = await supabase
-        .from('uniforms')
-        .insert([uniform])
+        .from('uniformes')
+        .insert([uniforme])
         .select();
 
       if (error) throw error;
       if (data) {
-        setUniforms([...uniforms, data[0]]);
+        setUniformes([...uniformes, data[0]]);
       }
     } catch (error) {
       console.error('Erro ao salvar uniforme:', error);
@@ -420,13 +420,13 @@ const Uniforms = () => {
     }
   };
 
-  const getUniformStats = (type: string): UniformStats => {
-    const typeUniforms = uniforms.filter(u => u.type === type);
+  const getUniformStats = (tipo: string): UniformeStats => {
+    const tipoUniformes = uniformes.filter(u => u.tipo === tipo);
     return {
-      total: typeUniforms.length,
-      available: typeUniforms.filter(u => u.status === 'available').length,
-      assigned: typeUniforms.filter(u => u.status === 'assigned').length,
-      maintenance: typeUniforms.filter(u => u.status === 'maintenance').length,
+      total: tipoUniformes.length,
+      disponiveis: tipoUniformes.filter(u => u.situacao === 'disponivel').length,
+      atribuidos: tipoUniformes.filter(u => u.situacao === 'atribuido').length,
+      manutencao: tipoUniformes.filter(u => u.situacao === 'manutencao').length,
     };
   };
 
@@ -450,15 +450,15 @@ const Uniforms = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {uniformModels.map(({ type, image }) => (
+          {uniformModels.map(({ tipo, image }) => (
             <UniformCard
-              key={type}
-              type={type}
+              key={tipo}
+              tipo={tipo}
               image={image}
-              stats={getUniformStats(type)}
-              uniforms={uniforms.filter(u => u.type === type)}
-              onViewDetails={(type) => setSelectedType(type)}
-              onAddUniform={(type) => setShowNewUniform(type)}
+              stats={getUniformStats(tipo)}
+              uniformes={uniformes.filter(u => u.tipo === tipo)}
+              onViewDetails={(tipo) => setSelectedType(tipo)}
+              onAddUniform={(tipo) => setShowNewUniform(tipo)}
             />
           ))}
         </div>
@@ -466,8 +466,8 @@ const Uniforms = () => {
 
       {selectedType && (
         <UniformDetails
-          type={selectedType}
-          uniforms={uniforms.filter(u => u.type === selectedType)}
+          tipo={selectedType}
+          uniformes={uniformes.filter(u => u.tipo === selectedType)}
           onClose={() => setSelectedType(null)}
         />
       )}
@@ -481,7 +481,7 @@ const Uniforms = () => {
 
       {showNewUniform && (
         <NewUniform
-          type={showNewUniform}
+          tipo={showNewUniform}
           onClose={() => setShowNewUniform(null)}
           onSave={handleSaveUniform}
         />

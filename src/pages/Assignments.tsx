@@ -4,44 +4,44 @@ import { Plus, X, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-interface Athlete {
+interface Atleta {
   id: string;
-  name: string;
+  nome: string;
   sport: string;
   cpf: string;
 }
 
-interface Uniform {
+interface Uniforme {
   id: string;
-  type: string;
-  size: string;
-  number: number;
-  status: 'available' | 'assigned' | 'maintenance';
+  tipo: string;
+  tamanho: string;
+  numero: number;
+  situacao: 'disponivel' | 'atribuido' | 'manutencao';
 }
 
-interface Assignment {
+interface Atribuicao {
   id: string;
-  athlete_id: string;
-  uniform_id: string;
-  pickup_date: string;
-  return_date: string | null;
-  status: 'scheduled' | 'picked_up' | 'returned';
-  athlete: Athlete;
-  uniform: Uniform;
+  atleta_id: string;
+  uniforme_id: string;
+  data_retirada: string;
+  data_devolucao: string | null;
+  situacao: 'agendado' | 'retirado' | 'devolvido';
+  atleta: Atleta;
+  uniforme: Uniforme;
 }
 
 const Assignments = () => {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignments, setAssignments] = useState<Atribuicao[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<Atleta[]>([]);
   const [uniformTypes, setUniformTypes] = useState<string[]>([]);
-  const [availableUniforms, setAvailableUniforms] = useState<Uniform[]>([]);
+  const [availableUniforms, setAvailableUniforms] = useState<Uniforme[]>([]);
   const [formData, setFormData] = useState({
-    athlete_id: '',
+    atleta_id: '',
     uniform_type: '',
-    uniform_id: '',
-    pickup_date: format(new Date(), 'yyyy-MM-dd'),
+    uniforme_id: '',
+    data_retirada: format(new Date(), 'yyyy-MM-dd'),
   });
 
   useEffect(() => {
@@ -53,13 +53,13 @@ const Assignments = () => {
   const fetchAssignments = async () => {
     try {
       const { data, error } = await supabase
-        .from('uniform_assignments')
+        .from('atribuicoes_uniformes')
         .select(`
           *,
-          athlete:athletes(*),
-          uniform:uniforms(*)
+          atleta:atletas(*),
+          uniforme:uniformes(*)
         `)
-        .order('pickup_date', { ascending: false });
+        .order('data_retirada', { ascending: false });
 
       if (error) throw error;
       setAssignments(data || []);
@@ -73,9 +73,9 @@ const Assignments = () => {
   const fetchAthletes = async () => {
     try {
       const { data, error } = await supabase
-        .from('athletes')
-        .select('id, name, sport, cpf')
-        .order('name');
+        .from('atletas')
+        .select('id, nome, sport, cpf')
+        .order('nome');
 
       if (error) throw error;
       setAthletes(data || []);
@@ -87,30 +87,30 @@ const Assignments = () => {
   const fetchUniformTypes = async () => {
     try {
       const { data, error } = await supabase
-        .from('uniforms')
-        .select('type')
-        .order('type');
+        .from('uniformes')
+        .select('tipo')
+        .order('tipo');
 
       if (error) throw error;
-      const types = [...new Set(data?.map(u => u.type) || [])];
+      const types = [...new Set(data?.map(u => u.tipo) || [])];
       setUniformTypes(types);
     } catch (error) {
       console.error('Erro ao buscar tipos de uniforme:', error);
     }
   };
 
-  const fetchAvailableUniforms = async (type: string) => {
+  const fetchAvailableUniforms = async (tipo: string) => {
     try {
       const { data, error } = await supabase
-        .from('uniforms')
+        .from('uniformes')
         .select('*')
-        .eq('type', type)
-        .eq('status', 'available')
-        .order('number');
+        .eq('tipo', tipo)
+        .eq('situacao', 'disponivel')
+        .order('numero');
 
       if (error) throw error;
       setAvailableUniforms(data || []);
-      setFormData(prev => ({ ...prev, uniform_id: '' }));
+      setFormData(prev => ({ ...prev, uniforme_id: '' }));
     } catch (error) {
       console.error('Erro ao buscar uniformes disponíveis:', error);
     }
@@ -118,42 +118,39 @@ const Assignments = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.athlete_id || !formData.uniform_id || !formData.pickup_date) {
+    if (!formData.atleta_id || !formData.uniforme_id || !formData.data_retirada) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
     }
 
     setLoading(true);
     try {
-      // Iniciar uma transação
-      // 1. Criar a atribuição
       const { data: assignmentData, error: assignmentError } = await supabase
-        .from('uniform_assignments')
+        .from('atribuicoes_uniformes')
         .insert([{
-          athlete_id: formData.athlete_id,
-          uniform_id: formData.uniform_id,
-          pickup_date: formData.pickup_date,
-          status: 'scheduled'
+          atleta_id: formData.atleta_id,
+          uniforme_id: formData.uniforme_id,
+          data_retirada: formData.data_retirada,
+          situacao: 'agendado'
         }])
         .select()
         .single();
 
       if (assignmentError) throw assignmentError;
 
-      // 2. Atualizar o status do uniforme
       const { error: uniformError } = await supabase
-        .from('uniforms')
-        .update({ status: 'assigned' })
-        .eq('id', formData.uniform_id);
+        .from('uniformes')
+        .update({ situacao: 'atribuido' })
+        .eq('id', formData.uniforme_id);
 
       if (uniformError) throw uniformError;
 
       setShowForm(false);
       setFormData({
-        athlete_id: '',
+        atleta_id: '',
         uniform_type: '',
-        uniform_id: '',
-        pickup_date: format(new Date(), 'yyyy-MM-dd'),
+        uniforme_id: '',
+        data_retirada: format(new Date(), 'yyyy-MM-dd'),
       });
       fetchAssignments();
     } catch (error) {
@@ -194,15 +191,15 @@ const Assignments = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Atleta</label>
                 <select
-                  value={formData.athlete_id}
-                  onChange={(e) => setFormData({ ...formData, athlete_id: e.target.value })}
+                  value={formData.atleta_id}
+                  onChange={(e) => setFormData({ ...formData, atleta_id: e.target.value })}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 >
                   <option value="">Selecione um atleta</option>
                   {athletes.map(athlete => (
                     <option key={athlete.id} value={athlete.id}>
-                      {athlete.name} - {athlete.sport} (CPF: {athlete.cpf})
+                      {athlete.nome} - {athlete.sport} (CPF: {athlete.cpf})
                     </option>
                   ))}
                 </select>
@@ -213,7 +210,7 @@ const Assignments = () => {
                 <select
                   value={formData.uniform_type}
                   onChange={(e) => {
-                    setFormData({ ...formData, uniform_type: e.target.value, uniform_id: '' });
+                    setFormData({ ...formData, uniform_type: e.target.value, uniforme_id: '' });
                     if (e.target.value) {
                       fetchAvailableUniforms(e.target.value);
                     }
@@ -232,15 +229,15 @@ const Assignments = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Uniforme</label>
                   <select
-                    value={formData.uniform_id}
-                    onChange={(e) => setFormData({ ...formData, uniform_id: e.target.value })}
+                    value={formData.uniforme_id}
+                    onChange={(e) => setFormData({ ...formData, uniforme_id: e.target.value })}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                     required
                   >
                     <option value="">Selecione um uniforme</option>
                     {availableUniforms.map(uniform => (
                       <option key={uniform.id} value={uniform.id}>
-                        Número {uniform.number} - Tamanho {uniform.size}
+                        Número {uniform.numero} - Tamanho {uniform.tamanho}
                       </option>
                     ))}
                   </select>
@@ -251,8 +248,8 @@ const Assignments = () => {
                 <label className="block text-sm font-medium text-gray-700">Data de Retirada</label>
                 <input
                   type="date"
-                  value={formData.pickup_date}
-                  onChange={(e) => setFormData({ ...formData, pickup_date: e.target.value })}
+                  value={formData.data_retirada}
+                  onChange={(e) => setFormData({ ...formData, data_retirada: e.target.value })}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
@@ -308,33 +305,33 @@ const Assignments = () => {
                 <tr key={assignment.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {assignment.athlete.name}
+                      {assignment.atleta.nome}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {assignment.athlete.sport}
+                      {assignment.atleta.sport}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {assignment.uniform.type} - Nº {assignment.uniform.number}
+                      {assignment.uniforme.tipo} - Nº {assignment.uniforme.numero}
                     </div>
                     <div className="text-sm text-gray-500">
-                      Tamanho {assignment.uniform.size}
+                      Tamanho {assignment.uniforme.tamanho}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {format(new Date(assignment.pickup_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      {format(new Date(assignment.data_retirada), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      assignment.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
-                      assignment.status === 'picked_up' ? 'bg-green-100 text-green-800' :
+                      assignment.situacao === 'agendado' ? 'bg-yellow-100 text-yellow-800' :
+                      assignment.situacao === 'retirado' ? 'bg-green-100 text-green-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {assignment.status === 'scheduled' ? 'Agendado' :
-                       assignment.status === 'picked_up' ? 'Retirado' :
+                      {assignment.situacao === 'agendado' ? 'Agendado' :
+                       assignment.situacao === 'retirado' ? 'Retirado' :
                        'Devolvido'}
                     </span>
                   </td>
