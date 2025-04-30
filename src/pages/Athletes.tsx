@@ -10,7 +10,6 @@ interface Athlete {
   phone: string | null;
   course: string | null;
   photo_url: string | null;
-  uniform_number: number | null;
   created_at: string;
 }
 
@@ -28,7 +27,6 @@ const Athletes = () => {
     sport: '',
     phone: '',
     course: '',
-    uniform_number: '',
     photo_url: '',
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -152,7 +150,6 @@ const Athletes = () => {
         sport: formData.sport,
         phone: formData.phone,
         course: formData.course,
-        uniform_number: formData.uniform_number ? parseInt(formData.uniform_number) : null,
         photo_url: photoUrl,
       };
 
@@ -179,7 +176,6 @@ const Athletes = () => {
         sport: '',
         phone: '',
         course: '',
-        uniform_number: '',
         photo_url: '',
       });
       setPhotoFile(null);
@@ -202,7 +198,6 @@ const Athletes = () => {
       sport: athlete.sport,
       phone: athlete.phone || '',
       course: athlete.course || '',
-      uniform_number: athlete.uniform_number?.toString() || '',
       photo_url: athlete.photo_url || '',
     });
     setShowForm(true);
@@ -241,8 +236,7 @@ const Athletes = () => {
   const filteredAthletes = athletes.filter(athlete =>
     athlete.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (athlete.cpf || '').includes(searchTerm) ||
-    athlete.sport.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (athlete.uniform_number?.toString() || '').includes(searchTerm)
+    athlete.sport.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -259,7 +253,6 @@ const Athletes = () => {
               sport: '',
               phone: '',
               course: '',
-              uniform_number: '',
               photo_url: '',
             });
             setPhotoFile(null);
@@ -375,16 +368,6 @@ const Athletes = () => {
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Número do Uniforme</label>
-                    <input
-                      type="number"
-                      value={formData.uniform_number}
-                      onChange={(e) => setFormData({ ...formData, uniform_number: e.target.value })}
-                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -444,9 +427,6 @@ const Athletes = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Curso
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Número
-              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </th>
@@ -455,13 +435,13 @@ const Athletes = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                   Carregando...
                 </td>
               </tr>
             ) : filteredAthletes.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                   Nenhum atleta encontrado
                 </td>
               </tr>
@@ -494,11 +474,6 @@ const Athletes = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{athlete.course || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {athlete.uniform_number || '-'}
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button

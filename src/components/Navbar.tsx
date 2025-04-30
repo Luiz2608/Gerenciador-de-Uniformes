@@ -16,7 +16,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-2">
               <Shirt className="h-8 w-8" />
-              <span className="text-xl font-bold">Gestão de Uniformes</span>
+              <span className="text-xl font-bold">Gerenciador de Uniforme</span>
             </Link>
             
             <div className="flex space-x-4">
