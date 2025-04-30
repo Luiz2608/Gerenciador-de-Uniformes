@@ -3,30 +3,32 @@ import { supabase } from '../lib/supabase';
 import { Shirt, Users, AlertCircle } from 'lucide-react';
 
 interface DashboardStats {
-  totalAthletes: number;
-  totalUniforms: number;
-  pendingAssignments: number;
+  totalAtletas: number;
+  totalUniformes: number;
+  atribuicoesPendentes: number;
 }
 
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats>({
-    totalAthletes: 0,
-    totalUniforms: 0,
-    pendingAssignments: 0,
+    totalAtletas: 0,
+    totalUniformes: 0,
+    atribuicoesPendentes: 0,
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [athletesCount, uniformsCount, pendingCount] = await Promise.all([
-        supabase.from('athletes').select('id', { count: 'exact' }),
-        supabase.from('uniforms').select('id', { count: 'exact' }),
-        supabase.from('uniform_assignments').select('id', { count: 'exact' }).eq('status', 'scheduled'),
+      const [atletasCount, uniformesCount, pendingCount] = await Promise.all([
+        supabase.from('atletas').select('id', { count: 'exact' }),
+        supabase.from('uniformes').select('id', { count: 'exact' }),
+        supabase.from('atribuicoes_uniformes')
+          .select('id', { count: 'exact' })
+          .eq('situacao', 'agendado'),
       ]);
 
       setStats({
-        totalAthletes: athletesCount.count || 0,
-        totalUniforms: uniformsCount.count || 0,
-        pendingAssignments: pendingCount.count || 0,
+        totalAtletas: atletasCount.count || 0,
+        totalUniformes: uniformesCount.count || 0,
+        atribuicoesPendentes: pendingCount.count || 0,
       });
     };
 
@@ -42,7 +44,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total de Atletas</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalAthletes}</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalAtletas}</p>
             </div>
             <Users className="h-8 w-8 text-blue-600" />
           </div>
@@ -52,7 +54,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total de Uniformes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalUniforms}</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalUniformes}</p>
             </div>
             <Shirt className="h-8 w-8 text-blue-600" />
           </div>
@@ -62,7 +64,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Atribuições Pendentes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.pendingAssignments}</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.atribuicoesPendentes}</p>
             </div>
             <AlertCircle className="h-8 w-8 text-yellow-500" />
           </div>

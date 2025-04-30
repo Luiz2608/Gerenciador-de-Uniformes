@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Pencil, Trash2, Search, X, Upload } from 'lucide-react';
 
-interface Athlete {
+interface Atleta {
   id: string;
-  name: string;
+  nome: string;
   cpf: string | null;
   sport: string;
   phone: string | null;
@@ -16,13 +16,13 @@ interface Athlete {
 const SPORTS = ['Basquete', 'Futsal', 'Handebol', 'Vôlei'];
 
 const Athletes = () => {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<Atleta[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+  const [editingAthlete, setEditingAthlete] = useState<Atleta | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
+    nome: '',
     cpf: '',
     sport: '',
     phone: '',
@@ -39,9 +39,9 @@ const Athletes = () => {
   const fetchAthletes = async () => {
     try {
       const { data, error } = await supabase
-        .from('athletes')
+        .from('atletas')
         .select('*')
-        .order('name');
+        .order('nome');
 
       if (error) throw error;
       setAthletes(data || []);
@@ -91,7 +91,6 @@ const Athletes = () => {
     if (file) {
       setPhotoFile(file);
       
-      // Create a preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({ ...prev, photo_url: reader.result as string }));
@@ -123,7 +122,6 @@ const Athletes = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate CPF
     const cpfValidationError = validateCPF(formData.cpf);
     if (cpfValidationError) {
       setCpfError(cpfValidationError);
@@ -145,7 +143,7 @@ const Athletes = () => {
       }
 
       const athleteData = {
-        name: formData.name,
+        nome: formData.nome,
         cpf: formData.cpf.replace(/[^\d]/g, ''),
         sport: formData.sport,
         phone: formData.phone,
@@ -157,13 +155,13 @@ const Athletes = () => {
 
       if (editingAthlete) {
         const { error: updateError } = await supabase
-          .from('athletes')
+          .from('atletas')
           .update(athleteData)
           .eq('id', editingAthlete.id);
         error = updateError;
       } else {
         const { error: insertError } = await supabase
-          .from('athletes')
+          .from('atletas')
           .insert([athleteData]);
         error = insertError;
       }
@@ -171,7 +169,7 @@ const Athletes = () => {
       if (error) throw error;
 
       setFormData({
-        name: '',
+        nome: '',
         cpf: '',
         sport: '',
         phone: '',
@@ -190,10 +188,10 @@ const Athletes = () => {
     }
   };
 
-  const handleEdit = (athlete: Athlete) => {
+  const handleEdit = (athlete: Atleta) => {
     setEditingAthlete(athlete);
     setFormData({
-      name: athlete.name,
+      nome: athlete.nome,
       cpf: athlete.cpf || '',
       sport: athlete.sport,
       phone: athlete.phone || '',
@@ -208,7 +206,7 @@ const Athletes = () => {
 
     try {
       const { error } = await supabase
-        .from('athletes')
+        .from('atletas')
         .delete()
         .eq('id', id);
 
@@ -234,7 +232,7 @@ const Athletes = () => {
   };
 
   const filteredAthletes = athletes.filter(athlete =>
-    athlete.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    athlete.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (athlete.cpf || '').includes(searchTerm) ||
     athlete.sport.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -248,7 +246,7 @@ const Athletes = () => {
             setShowForm(true);
             setEditingAthlete(null);
             setFormData({
-              name: '',
+              nome: '',
               cpf: '',
               sport: '',
               phone: '',
@@ -302,8 +300,8 @@ const Athletes = () => {
                     <input
                       type="text"
                       required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -452,19 +450,19 @@ const Athletes = () => {
                     {athlete.photo_url ? (
                       <img
                         src={athlete.photo_url}
-                        alt={athlete.name}
+                        alt={athlete.nome}
                         className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                         <span className="text-gray-500 text-sm">
-                          {athlete.name.charAt(0).toUpperCase()}
+                          {athlete.nome.charAt(0).toUpperCase()}
                         </span>
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{athlete.name}</div>
+                    <div className="text-sm font-medium text-gray-900">{athlete.nome}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{formatCPF(athlete.cpf)}</div>
