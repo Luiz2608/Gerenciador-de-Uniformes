@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { Shirt, AlertCircle, X, Eye, Plus, Upload } from 'lucide-react';
 
 interface Uniforme {
-  id: string;
+  id: number;
   tipo: string;
   tamanho: string;
   situacao: 'disponivel' | 'atribuido' | 'manutencao';
@@ -13,8 +12,11 @@ interface Uniforme {
 }
 
 interface ModeloUniforme {
+  id: number;
   tipo: string;
+  descricao: string;
   image: string;
+  codigo: string;
 }
 
 interface UniformeStats {
@@ -28,14 +30,18 @@ const TAMANHOS = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
 const CONDICOES = ['Novo', 'Bom', 'Regular', 'Ruim'];
 
 const UniformCard = ({ 
-  tipo, 
+  tipo,
+  codigo,
+  descricao,
   stats, 
-  image, 
+  image,
   uniformes,
   onViewDetails,
   onAddUniform 
 }: { 
-  tipo: string; 
+  tipo: string;
+  codigo: string;
+  descricao: string;
   stats: UniformeStats; 
   image: string;
   uniformes: Uniforme[];
@@ -51,11 +57,18 @@ const UniformCard = ({
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <h3 className="text-xl font-semibold text-white">Uniforme {tipo}</h3>
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-white">Uniforme {tipo}</h3>
+            <p className="text-sm text-gray-200 mt-1">{codigo}</p>
+          </div>
         </div>
       </div>
       
       <div className="p-6">
+        <div className="mb-4">
+          <p className="text-sm text-gray-600">{descricao}</p>
+        </div>
+
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Total:</span>
@@ -186,20 +199,37 @@ const NewUniformModel = ({
   onSave: (model: ModeloUniforme) => void;
 }) => {
   const [tipo, setTipo] = useState('');
+  const [descricao, setDescricao] = useState('');
   const [image, setImage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setImage(e.target.result.toString());
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tipo || !image) return;
+    if (!tipo || !descricao) return;
 
     setLoading(true);
     try {
-      await onSave({ tipo, image });
+      onSave({
+        id: Date.now(),
+        tipo,
+        descricao,
+        image,
+        codigo: `MOD-${Date.now().toString().slice(-6)}`
+      });
       onClose();
-    } catch (error) {
-      console.error('Erro ao salvar modelo:', error);
-      alert('Erro ao salvar o modelo de uniforme');
     } finally {
       setLoading(false);
     }
@@ -217,7 +247,7 @@ const NewUniformModel = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome do Modelo</label>
+            <label className="block text-sm font-medium text-gray-700">Nome do Modelo*</label>
             <input
               type="text"
               value={tipo}
@@ -228,15 +258,36 @@ const NewUniformModel = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">URL da Imagem</label>
-            <input
-              type="url"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700">Descrição*</label>
+            <textarea
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
               required
-              placeholder="https://exemplo.com/imagem.jpg"
+              rows={3}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Imagem do Modelo
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
+                <div className="space-y-1 text-center">
+                  <Upload className="mx-auto h-6 w-6 text-gray-400" />
+                  <div className="flex text-sm text-gray-600">
+                    <label className="cursor-pointer rounded-md bg-white font-medium text-blue-600 hover:text-blue-500">
+                      <span>Carregar imagem</span>
+                      <input
+                        type="file"
+                        className="sr-only"
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </label>
           </div>
 
           <div className="flex justify-end pt-4">
@@ -270,22 +321,20 @@ const NewUniform = ({
   });
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.tamanho || !formData.numero) return;
 
     setLoading(true);
     try {
-      await onSave({
+      onSave({
         ...formData,
         tipo,
         situacao: 'disponivel',
         numero: parseInt(formData.numero),
+        id: Date.now()
       });
       onClose();
-    } catch (error) {
-      console.error('Erro ao salvar uniforme:', error);
-      alert('Erro ao salvar o uniforme');
     } finally {
       setLoading(false);
     }
@@ -365,59 +414,37 @@ const Uniforms = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showNewModel, setShowNewModel] = useState(false);
   const [showNewUniform, setShowNewUniform] = useState<string | null>(null);
-  const [uniformModels, setUniformModels] = useState<ModeloUniforme[]>([
-    {
-      tipo: 'PRETA 2023',
-      image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=300&h=300',
-    },
-    {
-      tipo: 'BRANCA 2023',
-      image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&q=80&w=300&h=300',
-    },
-    {
-      tipo: 'TREINO',
-      image: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&q=80&w=300&h=300',
-    },
-  ]);
+  const [uniformModels, setUniformModels] = useState<ModeloUniforme[]>([]);
 
   useEffect(() => {
-    fetchUniforms();
+    const loadData = () => {
+      const savedModels = localStorage.getItem('uniformModels');
+      if (savedModels) setUniformModels(JSON.parse(savedModels));
+
+      const savedUniformes = localStorage.getItem('uniformes');
+      if (savedUniformes) setUniformes(JSON.parse(savedUniformes));
+      
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
-  const fetchUniforms = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('uniformes')
-        .select('*');
-
-      if (error) throw error;
-      setUniformes(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar uniformes:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSaveModel = (model: ModeloUniforme) => {
+    const updatedModels = [...uniformModels, model];
+    localStorage.setItem('uniformModels', JSON.stringify(updatedModels));
+    setUniformModels(updatedModels);
   };
 
-  const handleSaveModel = async (model: ModeloUniforme) => {
-    setUniformModels([...uniformModels, model]);
-  };
-
-  const handleSaveUniform = async (uniforme: Partial<Uniforme>) => {
-    try {
-      const { data, error } = await supabase
-        .from('uniformes')
-        .insert([uniforme])
-        .select();
-
-      if (error) throw error;
-      if (data) {
-        setUniformes([...uniformes, data[0]]);
-      }
-    } catch (error) {
-      console.error('Erro ao salvar uniforme:', error);
-      throw error;
-    }
+  const handleSaveUniform = (uniforme: Partial<Uniforme>) => {
+    const newUniform = {
+      ...uniforme,
+      id: Date.now(),
+      situacao: 'disponivel'
+    } as Uniforme;
+    
+    const updatedUniformes = [...uniformes, newUniform];
+    localStorage.setItem('uniformes', JSON.stringify(updatedUniformes));
+    setUniformes(updatedUniformes);
   };
 
   const getUniformStats = (tipo: string): UniformeStats => {
@@ -450,13 +477,15 @@ const Uniforms = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {uniformModels.map(({ tipo, image }) => (
+          {uniformModels.map((model) => (
             <UniformCard
-              key={tipo}
-              tipo={tipo}
-              image={image}
-              stats={getUniformStats(tipo)}
-              uniformes={uniformes.filter(u => u.tipo === tipo)}
+              key={model.id}
+              tipo={model.tipo}
+              codigo={model.codigo}
+              descricao={model.descricao}
+              image={model.image}
+              stats={getUniformStats(model.tipo)}
+              uniformes={uniformes.filter(u => u.tipo === model.tipo)}
               onViewDetails={(tipo) => setSelectedType(tipo)}
               onAddUniform={(tipo) => setShowNewUniform(tipo)}
             />
