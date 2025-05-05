@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Shirt, Users, AlertCircle } from 'lucide-react';
+import { Shirt, Users, AlertCircle, Download } from 'lucide-react';
+import { utils, writeFile } from 'xlsx';
 
 interface DashboardStats {
   totalAtletas: number;
@@ -35,10 +36,40 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
+  const handleExport = async () => {
+    try {
+      const [atletas, uniformes] = await Promise.all([
+        supabase.from('atletas').select('*'),
+        supabase.from('uniformes').select('*'),
+      ]);
+
+      const wb = utils.book_new();
+      const atletasWS = utils.json_to_sheet(atletas.data || []);
+      const uniformesWS = utils.json_to_sheet(uniformes.data || []);
+      
+      utils.book_append_sheet(wb, atletasWS, 'Atletas');
+      utils.book_append_sheet(wb, uniformesWS, 'Uniformes');
+      
+      writeFile(wb, 'relatorio_uniformes_atletas.xlsx');
+    } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+      alert('Erro ao gerar relatório');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Painel de Controle</h1>
-      
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Painel de Controle</h1>
+        <button
+          onClick={handleExport}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Exportar Relatório
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
